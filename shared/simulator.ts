@@ -52,8 +52,9 @@ const roundTo = (x: number, step: number) => Math.round(x / step) * step;
 
 interface SimEvent extends GameEvent {
   mu: number; sd: number; total: number; totSd: number; step: number;
-  players: Record<string, { name: string; mean: number; sd: number }[]>;
+  players: Record<string, { name: string; mean: number; sd: number; base: number }[]>;
   vol: number;
+  mu0: number; total0: number;
 }
 
 interface BookState { vig: number; lag: number; bias: number }
@@ -91,13 +92,15 @@ export class Simulator {
           live,
           clock: live ? liveClock(lg.sport) : undefined,
           mu: rnd(-1, 1) * p.sd * 0.5, sd: p.sd, total: p.total * rnd(0.9, 1.1), totSd: p.totSd, step: p.spreadStep,
-          players: {}, vol: live ? 1 : 0.15,
+          players: {}, vol: live ? 1 : 0.15, mu0: 0, total0: 0,
         };
+        ev.mu0 = ev.mu; ev.total0 = ev.total;
         for (const mk of lg.markets.filter(m => m.startsWith('p_'))) {
           const base = PROPS[mk];
           ev.players[mk] = [0, 1].map(() => ({
-            name: `${pick(FIRST)} ${pick(LAST)}`, mean: base.mean * rnd(0.75, 1.25), sd: base.sd,
+            name: `${pick(FIRST)} ${pick(LAST)}`, mean: 0, sd: base.sd, base: base.mean * rnd(0.75, 1.25),
           }));
+          for (const pl of ev.players[mk]) pl.mean = pl.base;
         }
         this.events.push(ev);
       }
@@ -109,9 +112,9 @@ export class Simulator {
     const first = this.seq === 0;
     this.seq++;
     for (const ev of this.events) {
-      ev.mu += (Math.random() - 0.5) * ev.sd * 0.06 * ev.vol;
-      ev.total += (Math.random() - 0.5) * ev.totSd * 0.05 * ev.vol;
-      for (const ps of Object.values(ev.players)) for (const pl of ps) pl.mean += (Math.random() - 0.5) * pl.sd * 0.05 * ev.vol;
+      ev.mu += (Math.random() - 0.5) * ev.sd * 0.06 * ev.vol - (ev.mu - ev.mu0) * 0.05;
+      ev.total += (Math.random() - 0.5) * ev.totSd * 0.05 * ev.vol - (ev.total - ev.total0) * 0.05;
+      for (const ps of Object.values(ev.players)) for (const pl of ps) pl.mean += (Math.random() - 0.5) * pl.sd * 0.05 * ev.vol - (pl.mean - pl.base) * 0.05;
       if (ev.live && Math.random() < 0.05) ev.clock = liveClock(ev.sport);
     }
     const upserts: Quote[] = [];
@@ -144,9 +147,9 @@ export class Simulator {
   private price(ev: SimEvent, mk: string, book: string, st: BookState, now: number): Quote[] {
     const m = marketByKey(mk);
     const out: Quote[] = [];
-    const noise = () => st.bias + (Math.random() - 0.5) * 0.02;
+    const noise = () => st.bias + (Math.random() - 0.5) * 0.03;
     const mkq = (side: string, p: number, line?: number, player?: string, isAlt?: boolean): Quote => {
-      const pr = Math.min(0.97, Math.max(0.03, p + noise()));
+      const pr = Math.min(0.97, Math.max(0.03, p * (1 + 2 * noise()))); // proportional error, like real books
       const price = Math.max(1.01, Math.round((1 / (pr * (1 + st.vig))) * 100) / 100);
       return {
         id: `${ev.id}|${mk}|${player ?? ''}|${line ?? ''}|${side}|${book}`,

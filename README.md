@@ -2,6 +2,18 @@
 
 Live and pre-game arbitrage, middles and +EV across Ontario sportsbooks: FanDuel, bet365, PointsBet, BetRivers, DraftKings, BetMGM and Caesars (plus theScore Bet, Betway, BET99, PROLINE+, NorthStar Bets and Pinnacle as optional extras).
 
+![Arbitrage table sorted by staying power](docs/screenshots/arbitrage.png)
+
+*Screenshots use the built-in demo feed (simulated odds).*
+
+| Arb details and stake split | Middles |
+|---|---|
+| ![Arb details drawer](docs/screenshots/arb-details.png) | ![Middles table](docs/screenshots/middles.png) |
+
+| +EV bets | Strategy settings |
+|---|---|
+| ![Positive EV table](docs/screenshots/positive-ev.png) | ![Strategy settings](docs/screenshots/settings-strategy.png) |
+
 ## Run it
 
 ```bash

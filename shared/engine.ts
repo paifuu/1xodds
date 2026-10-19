@@ -99,7 +99,7 @@ export class Engine {
       if (fair) {
         for (const q of usable) {
           const p = fair[q.side];
-          if (!p) continue;
+          if (!p || p < 0.1 || q.price > 11) continue; // long shots: de-vigged fair odds are too noisy to trust
           const e = (q.price * p - 1) * 100;
           if (e <= 0.25) continue;
           const key = `ev|${q.id}`;
@@ -126,6 +126,7 @@ export class Engine {
         const bestB = bestByLine(usable.filter(q => q.side === sideB));
         for (const a of bestA.values()) for (const b of bestB.values()) {
           if (a.line === undefined || b.line === undefined || a.book === b.book) continue;
+          if (a.price < 1.25 || b.price < 1.25 || a.price > 5 || b.price > 5) continue; // lopsided long shots aren't real middles
           // total: over T1 + under T2 hits when T1 < x < T2.  spread (home line Lh, away line La): hits when La < Lh.
           const size = m.lined === 'total' ? b.line - a.line : a.line - b.line;
           if (size <= 0 || size < s.minMiddleSize) continue;

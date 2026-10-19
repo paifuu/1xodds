@@ -3,7 +3,7 @@ import type { GameEvent, MarketDef, Opportunity, Quote, Settings } from '../../s
 import { bookById } from '../../shared/catalog';
 import { fmtAmerican } from '../../shared/odds';
 
-export const money = (n: number) => `$${n.toFixed(2)}`;
+export const money = (n: number) => `${n < 0 ? '−' : ''}$${Math.abs(n).toFixed(2)}`;
 export const pct = (n: number, d = 2) => `${n >= 0 ? '' : '−'}${Math.abs(n).toFixed(d)}%`;
 export const odds = (d: number) => fmtAmerican(d);
 const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
@@ -51,7 +51,7 @@ export function Badge({ book, size = 'md' }: { book: string; size?: 'sm' | 'md' 
   const src = sources[idx];
   if (src) {
     return (
-      <span className={`badge logo ${size}`} title={b?.name}>
+      <span className={`badge has-img ${size}`} title={b?.name}>
         <img src={src} alt={b?.name ?? book} loading="lazy" referrerPolicy="no-referrer"
           onError={() => { failed.add(src); setIdx(i => i + 1); }} />
       </span>
